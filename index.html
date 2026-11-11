@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moon - Đấu Trường Game Cả Lớp</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; user-select: none; }
+        
+        body { 
+            background: linear-gradient(135deg, #090d16, #111827, #1e1b4b); 
+            color: #fff; 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow-x: hidden; 
+            position: relative; 
+        }
+
+        /* Hiệu ứng Rung Màn Hình (Screen Shake) */
+        .shake-screen {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        /* Hiệu ứng trăng rằm dạ quang */
+        .moon-bg { 
+            position: fixed; 
+            top: -50px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 320px; 
+            height: 320px; 
+            background: radial-gradient(circle, #ffedd5 0%, #fde68a 30%, #cbd5e1 70%, transparent 100%); 
+            border-radius: 50%; 
+            filter: blur(30px); 
+            opacity: 0.18; 
+            z-index: 0; 
+            pointer-events: none; 
+        }
+
+        .container { z-index: 10; position: relative; }
+        
+        /* Hiệu ứng Card Thủy Tinh (Glassmorphism) */
+        .glass-card { 
+            background: rgba(15, 23, 42, 0.88); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.12); 
+            border-radius: 24px; 
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); 
+        }
+
+        /* BÀN UNO THẢM CASINO ĐỎ 3D */
+        .uno-table-red {
+            background: radial-gradient(circle at center, #dc2626 0%, #991b1b 50%, #450a0a 85%, #0f172a 100%);
+            border: 5px solid #ef4444;
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.8), 0 0 40px rgba(239, 68, 68, 0.4);
+            border-radius: 48px;
+            position: relative;
+        }
+
+        /* LÁ BÀI MA SÓI */
+        .werewolf-card {
+            width: 160px;
+            height: 240px;
+            background-color: #ffffff;
+            border-radius: 14px;
+            padding: 8px;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 0 2px #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .werewolf-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7), 0 0 15px rgba(245, 158, 11, 0.4);
+            z-index: 20;
+        }
+
+        .card-art-box {
+            width: 100%;
+            height: 125px;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 2px solid #0f172a;
+        }
+
+        .card-title-text {
+            font-weight: 900;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            color: #0f172a;
+            margin-top: 4px;
+            line-height: 1.1;
+        }
+
+        .card-desc-text {
+            font-size: 0.6rem;
+            color: #475569;
+            text-align: center;
+            line-height: 1.2;
+            font-weight: 600;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* LÁ BÀI UNO THIẾT KẾ CHUẨN */
+        .uno-card { 
+            width: 64px; 
+            height: 98px; 
+            border-radius: 10px; 
+            border: 2.5px solid #fff; 
+            display: inline-flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            padding: 4px 5px; 
+            font-weight: 900; 
+            position: relative; 
+            cursor: pointer; 
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.6); 
+            user-select: none;
+        }
+        .uno-card:hover { 
+            transform: translateY(-16px) scale(1.1); 
+            z-index: 40; 
+            box-shadow: 0 16px 30px rgba(0,0,0,0.8), 0 0 15px rgba(255,255,255,0.6); 
+        }
+        .bg-red { background: linear-gradient(135deg, #f87171, #dc2626); color: #fff; }
+        .bg-blue { background: linear-gradient(135deg, #60a5fa, #2563eb); color: #fff; }
+        .bg-green { background: linear-gradient(135deg, #34d399, #059669); color: #fff; }
+        .bg-yellow { background: linear-gradient(135deg, #facc15, #ca8a04); color: #000; }
+        .bg-wild { background: linear-gradient(135deg, #ef4444 25%, #3b82f6 25%, #3b82f6 50%, #10b981 50%, #10b981 75%, #eab308 75%); color: #fff; text-shadow: 1px 1px 3px #000; }
+
+        /* SKINS LÁ BÀI BẮT MẮT */
+        .skin-cyberpunk { border-color: #00f0ff !important; box-shadow: 0 0 12px #00f0ff !important; }
+        .skin-neon { border-color: #ff007f !important; box-shadow: 0 0 12px #ff007f !important; }
+
+        /* LÁ BÀI MẶT SAU CHO BOT */
+        .uno-card-back {
+            width: 34px;
+            height: 50px;
+            background: #0f172a;
+            border: 1.5px solid #fff;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .night-mode { background: radial-gradient(circle, #0f172a 0%, #020617 100%); border-color: #3b82f6; }
+        .day-mode { background: radial-gradient(circle, #1e293b 0%, #0f172a 100%); border-color: #f59e0b; }
+
+        .btn-call-uno { 
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.9), inset 0 0 10px rgba(255, 255, 255, 0.5); 
+            animation: pulse-red 1.6s infinite; 
+        }
+        @keyframes pulse-red { 
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9); } 
+            70% { transform: scale(1.08); box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); } 
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
+        }
+
+        /* LẬT BÀI 3D MA SÓI */
+        .flip-container { perspective: 1000px; width: 160px; height: 240px; margin: 0 auto; cursor: pointer; }
+        .flipper { transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; position: relative; width: 100%; height: 100%; }
+        .flip-container.flipped .flipper { transform: rotateY(180deg); cursor: default; }
+        .front, .back { backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 14px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .front { z-index: 2; transform: rotateY(0deg); background: linear-gradient(135deg, #1e1b4b, #312e81); border: 2px solid #6366f1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .back { transform: rotateY(180deg); background: white; }
+        .moon-icon-front { font-size: 3.5rem; margin-bottom: 12px; filter: drop-shadow(0 0 12px rgba(165, 180, 252, 0.8)); }
+    </style>
+</head>
+<body id="mainBody">
+
+    <div class="moon-bg"></div>
+
+    <div class="container w-full max-w-6xl p-2 sm:p-4">
+        
+        <!-- 1. MÀN HÌNH ĐĂNG NHẬP (BỔ SUNG CHỌN AVATAR) -->
+        <div class="glass-card p-6 sm:p-10 text-center" id="loginCard">
+            <h1 class="text-4xl sm:text-6xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-500 mb-2">MOON</h1>
+            <p class="text-slate-400 text-sm sm:text-base mb-6">Đấu Trường Board Game Lớp Học 🌕</p>
+            
+            <div class="max-w-md mx-auto space-y-4">
+                <div>
+                    <p class="text-xs font-bold text-slate-300 mb-2">Chọn Avatar Linh Vật Của Bạn:</p>
+                    <div class="flex justify-center gap-3 mb-4" id="avatarPickerContainer">
+                        <span onclick="selectAvatar('🐱')" class="avatar-option text-2xl p-2 rounded-xl bg-slate-800 border-2 border-indigo-500 cursor-pointer hover:scale-110 transition-all">🐱</span>
+                        <span onclick="selectAvatar('🦊')" class="avatar-option text-2xl p-2 rounded-xl bg-slate-800 border-2 border-transparent cursor-pointer hover:scale-110 transition-all">🦊</span>
+                        <span onclick="selectAvatar('🐼')" class="avatar-option text-2xl p-2 rounded-xl bg-slate-800 border-2 border-transparent cursor-pointer hover:scale-110 transition-all">🐼</span>
+                        <span onclick="selectAvatar('🦁')" class="avatar-option text-2xl p-2 rounded-xl bg-slate-800 border-2 border-transparent cursor-pointer hover:scale-110 transition-all">🦁</span>
+                        <span onclick="selectAvatar('🤖')" class="avatar-option text-2xl p-2 rounded-xl bg-slate-800 border-2 border-transparent cursor-pointer hover:scale-110 transition-all">🤖</span>
+                    </div>
+                </div>
+
+                <input type="text" id="usernameInput" placeholder="Nhập biệt danh của bạn..." maxlength="15" 
+                    class="w-full px-5 py-3.5 bg-slate-900/70 border-2 border-slate-700 rounded-xl text-center text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all font-semibold">
+                
+                <button onclick="loginGuest()" 
+                    class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                    Vào Phòng Chờ 🚀
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. MÀN HÌNH MENU CHÍNH -->
+        <div class="glass-card p-6 sm:p-8 text-center hidden" id="menuCard">
+            <h1 class="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-400 mb-1">MOON ARENA</h1>
+            <p class="text-slate-300 text-base mb-6">Xin chào, <span id="playerAvatarDisplay">🐱</span> <span id="playerGreeting" class="text-sky-400 font-bold">Người chơi</span> 👋</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <!-- UNO -->
+                <div onclick="selectGame('Uno')" class="bg-slate-900/60 border-2 border-slate-700/80 hover:border-red-500 hover:bg-red-500/10 p-5 rounded-2xl cursor-pointer transition-all text-left flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xl font-black text-red-400 group-hover:scale-105 transition-transform">UNO</h3>
+                            <span class="px-2.5 py-1 text-[11px] font-bold text-red-400 border border-red-500/40 rounded-full bg-red-500/10">2-6 người</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Đánh bài đổi màu, chặn lượt, thả x4 hủy diệt tình bạn!</p>
+                    </div>
+                    <span class="mt-4 text-xs font-bold text-red-400 flex items-center gap-1">Chơi ngay &rarr;</span>
+                </div>
+
+                <!-- MA SÓI -->
+                <div onclick="selectGame('Ma Sói')" class="bg-slate-900/60 border-2 border-slate-700/80 hover:border-amber-500 hover:bg-amber-500/10 p-5 rounded-2xl cursor-pointer transition-all text-left flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xl font-black text-amber-400 group-hover:scale-105 transition-transform">MA SÓI</h3>
+                            <span class="px-2.5 py-1 text-[11px] font-bold text-amber-400 border border-amber-500/40 rounded-full bg-amber-500/10">6-8 người</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Bổ sung Kẻ Say & Bán Sói. Đêm cắn người, ngày ẩn mình!</p>
+                    </div>
+                    <span class="mt-4 text-xs font-bold text-amber-400 flex items-center gap-1">Chơi ngay &rarr;</span>
+                </div>
+
+                <!-- MÈO NỔ -->
+                <div onclick="selectGame('Mèo Nổ')" class="bg-slate-900/60 border-2 border-slate-700/80 hover:border-emerald-500 hover:bg-emerald-500/10 p-5 rounded-2xl cursor-pointer transition-all text-left flex flex-col justify-between group opacity-75">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xl font-black text-emerald-400">MÈO NỔ</h3>
+                            <span class="px-2.5 py-1 text-[11px] font-bold text-emerald-400 border border-emerald-500/40 rounded-full bg-emerald-500/10">Sắp ra mắt</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Rút bài căng thẳng, gỡ bom đỉnh cao. Sắp hoàn thiện!</p>
+                    </div>
+                    <span class="mt-4 text-xs font-bold text-slate-500">Đang phát triển...</span>
+                </div>
+            </div>
+
+            <button onclick="logoutGuest()" class="px-5 py-2 border border-slate-600 text-slate-400 hover:text-white hover:border-slate-400 rounded-xl text-xs font-semibold transition-all">
+                Đăng xuất
+            </button>
+        </div>
+
+        <!-- 3. QUẢN LÝ PHÒNG -->
+        <div class="glass-card p-6 sm:p-8 text-center hidden" id="roomCard">
+            <h2 class="text-2xl font-bold mb-1">Trò chơi: <span id="selectedGameName" class="text-sky-400 uppercase">GAME</span></h2>
+            <p class="text-xs text-slate-400 mb-6">Tạo phòng riêng hoặc gia nhập phòng của đồng học</p>
+
+            <div class="max-w-md mx-auto space-y-4">
+                <button onclick="createNewRoom()" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/25 transition-all">
+                    Tạo Phòng Mới
+                </button>
+                
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-slate-700"></div>
+                    <span class="flex-shrink mx-4 text-xs text-slate-500 uppercase font-bold">Hoặc</span>
+                    <div class="flex-grow border-t border-slate-700"></div>
+                </div>
+
+                <input type="text" id="roomCodeInput" placeholder="Nhập mã phòng (6 ký tự)..." maxlength="6" 
+                    class="w-full px-4 py-3 bg-slate-900/70 border-2 border-slate-700 rounded-xl text-center text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 tracking-widest font-mono uppercase">
+                
+                <button onclick="joinRoom()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-bold text-white shadow-lg shadow-emerald-500/25 transition-all">
+                    Tham Gia Phòng
+                </button>
+            </div>
+
+            <button onclick="backToMenu()" class="mt-6 text-xs text-slate-400 hover:text-white underline">Quay lại Menu</button>
+        </div>
+
+        <!-- 4. PHÒNG CHỜ (LOBBY) -->
+        <div class="glass-card p-6 text-center hidden" id="lobbyCard">
+            <h2 id="lobbyGameTitle" class="text-2xl font-black text-indigo-400 mb-2">LOBBY GAME</h2>
+            
+            <div class="bg-slate-900/80 border-2 border-dashed border-sky-400/60 rounded-xl p-3 max-w-xs mx-auto mb-4">
+                <p class="text-[11px] text-slate-400 uppercase tracking-wider font-bold mb-1">MÃ PHÒNG THAM GIA</p>
+                <div id="lobbyCodeDisplay" class="text-3xl font-mono font-black text-sky-400 tracking-widest">XXXXXX</div>
+            </div>
+
+            <div class="flex items-center justify-between max-w-md mx-auto mb-3 px-1">
+                <p class="text-xs text-slate-400 font-bold">Danh sách người chơi trong phòng:</p>
+                <button onclick="addBotToLobby()" class="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-1">
+                    <span>🤖</span> + Thêm Bot Defcon
+                </button>
+            </div>
+
+            <div id="playerSlotsContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-1 mb-6">
+                <!-- JS Render các Slot -->
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onclick="startGameLogic()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 rounded-xl font-bold text-white shadow-lg shadow-rose-600/30 transition-all">
+                    Bắt Đầu Trận Đấu 🚀
+                </button>
+                <button onclick="leaveLobby()" class="w-full sm:w-auto px-6 py-3 border border-slate-700 hover:bg-slate-800 rounded-xl font-bold text-slate-300 text-xs transition-all">
+                    Rời Phòng
+                </button>
+            </div>
+        </div>
+
+        <!-- MÀN HÌNH NHẬN VAI TRÒ MA SÓI -->
+        <div class="glass-card p-6 sm:p-10 text-center hidden" id="werewolfRevealCard">
+            <h2 class="text-2xl font-black text-indigo-400 mb-2">VAI TRÒ CỦA BẠN</h2>
+            <p id="revealInstruction" class="text-sm text-slate-300 mb-8 animate-pulse">Nhấn vào lá bài để lật và xem vai trò của bạn</p>
+            
+            <div class="flip-container" id="myRoleFlipContainer" onclick="flipMyCard()">
+                <div class="flipper">
+                    <div class="front">
+                        <div class="moon-icon-front">🌕</div>
+                        <p class="text-indigo-200 font-bold text-xs tracking-widest uppercase">Secret Role</p>
+                    </div>
+                    <div class="back" id="myRoleBackFace">
+                        <!-- JS chèn lá bài -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="enterVillageBox" class="mt-8 opacity-0 transition-opacity duration-500 hidden">
+                <button onclick="enterWerewolfVillage()" class="px-8 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-xl font-bold text-white shadow-lg shadow-amber-600/30 transition-all animate-bounce">
+                    Tiến vào Làng 🐺
+                </button>
+            </div>
+        </div>
+
+        <!-- 5. MÀN HÌNH BÀN CHƠI MA SÓI (BỔ SUNG SỔ TAY GHI CHÚ BÍ MẬT) -->
+        <div class="glass-card p-4 sm:p-6 hidden transition-all duration-500" id="werewolfGameCard">
+            <div class="flex flex-wrap items-center justify-between border-b border-slate-700/80 pb-3 mb-4 gap-2">
+                <div>
+                    <h2 class="text-lg font-black text-amber-400 flex items-center gap-2">
+                        <span>🌕</span> ĐẤU TRƯỜNG MA SÓI
+                    </h2>
+                    <p id="werewolfPhaseText" class="text-xs font-bold text-sky-400">Đêm Thứ 1 - Ma Sói Thức Giấc</p>
+                </div>
+                
+                <div id="dayTimerBox" class="hidden flex items-center gap-2 bg-amber-500/20 border border-amber-500/40 px-3 py-1 rounded-xl">
+                    <span class="text-xs font-bold text-amber-300">⏳ Thảo luận:</span>
+                    <span id="dayTimerDisplay" class="text-sm font-mono font-black text-amber-400">03:00</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleNotebook()" class="px-3 py-1 bg-amber-600/80 hover:bg-amber-500 border border-amber-400 rounded-lg text-xs font-bold text-white shadow">📓 Sổ Tay</button>
+                    <button onclick="quitWerewolfGame()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-bold text-slate-300">Thoát</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div class="lg:col-span-3 flex flex-col items-center bg-slate-900/60 p-3 rounded-2xl border border-slate-700/60">
+                    <p class="text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Vai Trò Của Bạn</p>
+                    <div id="myWerewolfCardContainer" class="transform scale-95 origin-top"></div>
+                </div>
+
+                <div class="lg:col-span-5 flex flex-col gap-3">
+                    <div class="bg-slate-950/80 rounded-2xl p-3 border border-slate-800 shadow-inner h-36 flex flex-col">
+                        <p class="text-xs font-black text-amber-400 uppercase mb-1 border-b border-slate-800 pb-1 flex items-center gap-1.5">
+                            <span>📜</span> Nhật Ký Quản Trò
+                        </p>
+                        <p id="werewolfActionLog" class="text-xs text-slate-300 leading-relaxed italic overflow-y-auto flex-grow pr-1">
+                            Đêm đã về trên làng Miller... Mọi người hãy nhắm mắt lại.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-950/90 rounded-2xl p-3 border border-slate-800 shadow-inner flex-grow flex flex-col h-64">
+                        <p class="text-xs font-black text-sky-400 uppercase mb-2 border-b border-slate-800 pb-1 flex items-center justify-between">
+                            <span>💬 Trò Chuyện & Thảo Luận</span>
+                            <span class="text-[10px] text-slate-500 font-normal">Kênh Làng</span>
+                        </p>
+                        <div id="werewolfChatLog" class="flex-grow overflow-y-auto space-y-2 pr-1 text-xs mb-2"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="werewolfChatInput" placeholder="Nhập tin nhắn thảo luận..." onkeydown="if(event.key==='Enter') sendWerewolfChat()"
+                                class="flex-grow px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500">
+                            <button onclick="sendWerewolfChat()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-xs">Gửi</button>
+                        </div>
+                    </div>
+
+                    <div id="werewolfSkillButtons" class="w-full space-y-2 hidden"></div>
+                </div>
+
+                <div class="lg:col-span-4 flex flex-col justify-between bg-slate-900/60 p-4 rounded-2xl border border-slate-700/60">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 border-b border-slate-700 pb-2">
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cư Dân (<span id="aliveCount">0</span> Sống)</p>
+                            <span class="text-[10px] text-sky-400 bg-sky-900/30 px-2 py-0.5 rounded">Bấm chọn mục tiêu</span>
+                        </div>
+                        <div id="werewolfPlayersGrid" class="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto p-1 pr-1"></div>
+                    </div>
+
+                    <div id="dayVotePanel" class="mt-3 pt-3 border-t border-slate-700/80 hidden">
+                        <p class="text-xs font-bold text-amber-300 mb-2">Biểu quyết treo cổ:</p>
+                        <button onclick="submitDayVote()" class="w-full py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl font-bold text-xs text-white shadow-lg shadow-red-600/20 transition-all uppercase tracking-wider">
+                            Xác Nhận Treo Cổ ⚖️
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- POP-UP SỔ TAY GHI CHÚ BÍ MẬT -->
+        <div id="notebookModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+            <div class="bg-slate-900 border-2 border-amber-500/50 rounded-2xl p-5 w-full max-w-md shadow-2xl">
+                <h3 class="text-sm font-black text-amber-400 uppercase mb-2 flex items-center gap-2">
+                    <span>📓</span> Sổ Tay Ghi Chép Bí Mật Thám Tử
+                </h3>
+                <textarea id="notebookText" placeholder="Ghi lại manh mối nghi vấn tại đây (VD: Bot 1 nghi là Sói, Bot 2 là Tiên Tri...)" 
+                    class="w-full h-40 bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-amber-200 focus:outline-none focus:border-amber-500 resize-none"></textarea>
+                <div class="mt-3 flex justify-end">
+                    <button onclick="toggleNotebook()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl">Đóng Sổ Tay</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. MÀN HÌNH BÀN CHƠI UNO -->
+        <div class="glass-card p-3 sm:p-5 hidden" id="unoGameCard">
+            <div class="uno-table-red w-full h-[580px] flex flex-col justify-between p-4 overflow-hidden shadow-2xl">
+                <div class="w-full flex justify-around items-center z-10 px-12 pt-1">
+                    <div id="botSlotTopLeft" class="flex items-center gap-2"></div>
+                    <div id="botSlotTopRight" class="flex items-center gap-2"></div>
+                </div>
+
+                <div class="flex justify-between items-center w-full my-auto px-2 z-10">
+                    <div id="botSlotLeft" class="w-32 flex justify-start"></div>
+
+                    <div class="flex justify-center items-center gap-6 sm:gap-10">
+                        <div onclick="playerDrawCard()" class="w-20 h-28 bg-slate-950 border-2 border-white/80 rounded-xl flex items-center justify-center cursor-pointer shadow-2xl hover:scale-105 active:scale-95 transition-all group relative">
+                            <span class="text-red-500 font-black italic -rotate-45 text-xl group-hover:scale-110 transition-transform drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">UNO</span>
+                            <span class="absolute -bottom-2 text-[9px] bg-slate-800 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-500/50">Rút bài</span>
+                        </div>
+
+                        <div id="discardPile" class="relative"></div>
+                    </div>
+
+                    <div id="botSlotRight" class="w-32 flex justify-end"></div>
+                </div>
+
+                <div id="colorPickerBox" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center hidden z-50 animate-fade-in">
+                    <p class="text-base font-black text-amber-300 mb-4 tracking-wide uppercase">🔴 Chọn màu sắc tiếp theo 🔵</p>
+                    <div class="flex gap-4 p-4 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl">
+                        <div onclick="selectWildColor('red')" class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-700 border-2 border-white cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-lg"></div>
+                        <div onclick="selectWildColor('blue')" class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-700 border-2 border-white cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-lg"></div>
+                        <div onclick="selectWildColor('green')" class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-700 border-2 border-white cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-lg"></div>
+                        <div onclick="selectWildColor('yellow')" class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-300 to-yellow-600 border-2 border-white cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-lg"></div>
+                    </div>
+                </div>
+
+                <button onclick="callUno()" class="btn-call-uno absolute right-5 bottom-24 w-16 h-16 rounded-full bg-gradient-to-br from-red-500 via-rose-600 to-pink-700 text-white font-black text-xs border-2 border-white flex items-center justify-center cursor-pointer z-30 transition-transform active:scale-90">
+                    CALL<br>UNO
+                </button>
+
+                <div class="flex flex-col items-center gap-1 z-20">
+                    <div id="turnStatus" class="text-xs font-black text-amber-300 bg-slate-900/90 px-4 py-1 rounded-full border border-amber-500/40 shadow-md">
+                        👉 Lượt của bạn!
+                    </div>
+                    <div id="playerHandContainer" class="flex justify-center -space-x-5 max-w-full overflow-x-auto py-2 px-6"></div>
+                </div>
+            </div>
+            
+            <div class="mt-3 flex justify-between items-center px-1">
+                <button onclick="quitUnoGame()" class="px-4 py-2 border border-slate-700 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all">
+                    &larr; Rời Bàn Chơi
+                </button>
+                <div class="text-[11px] text-slate-400 font-semibold">Chế độ UNO Thảm Đỏ Arena 🎮</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT XỬ LÝ GAME & HIỆU ỨNG NÂNG CẤP BƯỚC 1 & 2 -->
+    <script>
+        // ================= HỆ THỐNG ÂM THANH WEB AUDIO SYNTHESIZER =================
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) { audioCtx = new AudioCtx(); }
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+        }
+
+        function playSoundClick() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch (e) {}
+        }
+
+        function playSoundCard() {
+            try {
+                initAudio();
+                const bufferSize = audioCtx.sampleRate * 0.1;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                filter.Q.setValueAtTime(3, audioCtx.currentTime);
+
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start();
+            } catch (e) {}
+        }
+
+        function playSoundWolfHowl() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+
+                const now = audioCtx.currentTime;
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(550, now + 0.8);
+                osc.frequency.exponentialRampToValueAtTime(320, now + 2.0);
+
+                gain.gain.setValueAtTime(0.01, now);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.5);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 2.2);
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, now);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(now + 2.2);
+            } catch (e) {}
+        }
+
+        function playSoundMorningBell() {
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 1.2);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 1.2);
+                });
+            } catch (e) {}
+        }
+
+        function playSoundUnoTrumpet() {
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.08 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.3);
+                });
+            } catch (e) {}
+        }
+
+        function playSoundGavel() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch (e) {}
+        }
+
+        function triggerScreenShake() {
+            const body = document.getElementById('mainBody');
+            body.classList.add('shake-screen');
+            setTimeout(() => body.classList.remove('shake-screen'), 400);
+        }
+
+        function fireWinConfetti() {
+            try {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            } catch(e) {}
+        }
+
+        // ================= DỮ LIỆU BỘ BÀI MA SÓI (BỔ SUNG KẺ SAY & BÁN SÓI) =================
+        const WEREWOLF_ROLES = {
+            WEREWOLF: {
+                name: 'MA SÓI',
+                colorBg: '#7f1d1d',
+                cardColor: '#ef4444',
+                desc: 'Được gọi dậy vào mỗi đêm. Chọn 1 nạn nhân bất kỳ để tiêu diệt.',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#450a0a"/><circle cx="50" cy="50" r="38" fill="#7f1d1d"/><path d="M30 75 C30 55, 40 40, 50 40 C60 40, 70 55, 70 75 Z" fill="#0f172a"/><polygon points="25,35 35,50 15,45" fill="#0f172a"/><polygon points="75,35 65,50 85,45" fill="#0f172a"/><circle cx="42" cy="48" r="3" fill="#ef4444"/><circle cx="58" cy="48" r="3" fill="#ef4444"/><polygon points="50,53 45,60 55,60" fill="#0f172a"/><path d="M40 68 Q50 60 60 68" stroke="#ef4444" stroke-width="2" fill="none"/></svg>`
+            },
+            VILLAGER: {
+                name: 'DÂN LÀNG',
+                colorBg: '#d97706',
+                cardColor: '#f59e0b',
+                desc: 'Không có kỹ năng đêm. Thảo luận và suy luận để treo cổ Sói ban ngày.',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#78350f"/><circle cx="50" cy="50" r="38" fill="#f59e0b"/><circle cx="50" cy="40" r="14" fill="#78350f"/><path d="M25 75 C25 58, 35 52, 50 52 C65 52, 75 58, 75 75 Z" fill="#78350f"/><circle cx="50" cy="50" r="6" fill="#fef3c7"/><path d="M50 20 L50 10 M20 50 L10 50 M80 50 L90 50" stroke="#fef3c7" stroke-width="3"/></svg>`
+            },
+            SEER: {
+                name: 'TIÊN TRI',
+                colorBg: '#581c87',
+                cardColor: '#a855f7',
+                desc: 'Được gọi dậy đêm. Soi bài 1 người để biết họ thuộc phe Sói hay Dân.',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#3b0764"/><circle cx="50" cy="50" r="38" fill="#7e22ce"/><path d="M20 50 Q50 20 80 50 Q50 80 20 50 Z" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/><circle cx="50" cy="50" r="14" fill="#a855f7"/><circle cx="50" cy="50" r="6" fill="#0f172a"/><circle cx="53" cy="47" r="2" fill="#ffffff"/></svg>`
+            },
+            WITCH: {
+                name: 'PHÙ THỦY',
+                colorBg: '#831843',
+                cardColor: '#ec4899',
+                desc: 'Sở hữu 1 bình Cứu (cứu người bị cắn) và 1 bình Độc (đầu độc 1 người).',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#500724"/><circle cx="50" cy="50" r="38" fill="#9d174d"/><path d="M35 68 L40 45 L60 45 L65 68 Z" fill="#ec4899"/><rect x="42" y="38" width="16" height="7" rx="2" fill="#fbcfe8"/><path d="M30 68 Q50 78 70 68" stroke="#fbcfe8" stroke-width="3" fill="none"/><circle cx="50" cy="55" r="3" fill="#ffffff"/></svg>`
+            },
+            HUNTER: {
+                name: 'THỢ SĂN',
+                colorBg: '#14532d',
+                cardColor: '#22c55e',
+                desc: 'Khi bị chết, Thợ Săn có quyền bắn gục thêm 1 người chơi ngay lập tức.',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#052e16"/><circle cx="50" cy="50" r="38" fill="#15803d"/><circle cx="50" cy="50" r="22" fill="none" stroke="#bbf7d0" stroke-width="4"/><circle cx="50" cy="50" r="8" fill="#bbf7d0"/><line x1="50" y1="20" x2="50" y2="80" stroke="#bbf7d0" stroke-width="3"/><line x1="20" y1="50" x2="80" y2="50" stroke="#bbf7d0" stroke-width="3"/></svg>`
+            },
+            BODYGUARD: {
+                name: 'BẢO VỆ',
+                colorBg: '#1e3a8a',
+                cardColor: '#3b82f6',
+                desc: 'Mỗi đêm chọn bảo vệ 1 người. Người được bảo vệ sẽ không bị Sói cắn chết.',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#172554"/><circle cx="50" cy="50" r="38" fill="#1d4ed8"/><path d="M50 22 L75 32 V52 C75 68, 50 78, 50 78 C50 78, 25 68, 25 52 V32 Z" fill="#93c5fd" stroke="#ffffff" stroke-width="2"/><path d="M42 50 L48 56 L60 42" stroke="#1e3a8a" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`
+            },
+            DRUNK: {
+                name: 'KẺ SAY RƯỢU',
+                colorBg: '#701a75',
+                cardColor: '#d946ef',
+                desc: 'Tưởng mình là Dân Làng bình thường. Kỹ năng soi hay nhìn đều ngẫu nhiên bị nhiễu.',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#4a044e"/><circle cx="50" cy="50" r="38" fill="#c026d3"/><path d="M40 30 L60 30 L55 60 L45 60 Z" fill="#fdf4ff"/><line x1="35" y1="30" x2="65" y2="30" stroke="#ffffff" stroke-width="3"/></svg>`
+            },
+            TANNER: {
+                name: 'BÁN SÓI / CHỦ TIỆM',
+                colorBg: '#3f6212',
+                cardColor: '#84cc16',
+                desc: 'Phe Thứ 3 Đơn Độc. Mục tiêu duy nhất: Làm sao để Dân Làng treo cổ mình!',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect width="100" height="100" fill="#1a2e05"/><circle cx="50" cy="50" r="38" fill="#65a30d"/><circle cx="50" cy="50" r="16" fill="#ecfccb"/><path d="M35 65 Q50 80 65 65" stroke="#1a2e05" stroke-width="3" fill="none"/></svg>`
+            }
+        };
+
+        // GLOBAL VARIABLES
+        let selectedAvatar = '🐱';
+        let currentSelectedGame = "";
+        let werewolfPlayers = [];
+        let myPlayerIndex = 0;
+        let werewolfPhase = "NIGHT";
+        let werewolfDayCount = 1;
+        let selectedTargetIndex = null;
+        let victimTonightIndex = null;
+        let guardedTonightIndex = null;
+        let witchHealUsed = false, witchPoisonUsed = false;
+        let poisonedTonightIndex = null;
+
+        // BIẾN THỜI GIAN BAN NGÀY
+        let dayTimerInterval = null;
+        let dayTimeRemaining = 180;
+
+        // BIẾN CHO LOBBY
+        let lobbyPlayers = [];
+        let maxLobbySlots = 8;
+
+        // BIẾN CHO GAME UNO
+        const COLORS = ['red', 'blue', 'green', 'yellow'];
+        const VALUES = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '🚫', '🔁', '+2'];
+        let deck = [], playerHand = [], topDiscard = null;
+        let unoBots = [];
+        let currentTurnIndex = 0;
+        let isClockwise = true;
+        let activeColor = '', hasCalledUno = false, pendingWildCardIndex = null;
+
+        // ================= HÀM CHỌN AVATAR & ĐĂNG NHẬP =================
+        function selectAvatar(emoji) {
+            playSoundClick();
+            selectedAvatar = emoji;
+            const options = document.querySelectorAll('.avatar-option');
+            options.forEach(opt => {
+                if (opt.innerText === emoji) {
+                    opt.classList.add('border-indigo-500');
+                    opt.classList.remove('border-transparent');
+                } else {
+                    opt.classList.remove('border-indigo-500');
+                    opt.classList.add('border-transparent');
+                }
+            });
+        }
+
+        function loginGuest() {
+            playSoundClick();
+            const username = document.getElementById('usernameInput').value.trim();
+            if (username === '') { alert('Vui lòng nhập tên biệt danh!'); return; }
+            sessionStorage.setItem('moon_player', username);
+            sessionStorage.setItem('moon_avatar', selectedAvatar);
+            showMenu(username);
+        }
+
+        function showMenu(username) {
+            const avatar = sessionStorage.getItem('moon_avatar') || '🐱';
+            document.getElementById('playerGreeting').innerText = username;
+            document.getElementById('playerAvatarDisplay').innerText = avatar;
+            document.getElementById('loginCard').classList.add('hidden');
+            document.getElementById('menuCard').classList.remove('hidden');
+            document.getElementById('roomCard').classList.add('hidden');
+            document.getElementById('lobbyCard').classList.add('hidden');
+            document.getElementById('unoGameCard').classList.add('hidden');
+            document.getElementById('werewolfGameCard').classList.add('hidden');
+        }
+
+        function logoutGuest() {
+            playSoundClick();
+            sessionStorage.removeItem('moon_player');
+            document.getElementById('usernameInput').value = "";
+            document.getElementById('menuCard').classList.add('hidden');
+            document.getElementById('loginCard').classList.remove('hidden');
+        }
+
+        function selectGame(gameName) {
+            playSoundClick();
+            if (gameName === 'Mèo Nổ') {
+                alert('Game Mèo Nổ đang được hệ thống cập nhật. Vui lòng chọn UNO hoặc MA SÓI!');
+                return;
+            }
+            currentSelectedGame = gameName;
+            document.getElementById('selectedGameName').innerText = gameName.toUpperCase();
+            document.getElementById('menuCard').classList.add('hidden');
+            document.getElementById('roomCard').classList.remove('hidden');
+        }
+
+        function backToMenu() {
+            playSoundClick();
+            document.getElementById('roomCard').classList.add('hidden');
+            document.getElementById('menuCard').classList.remove('hidden');
+        }
+
+        function createNewRoom() {
+            playSoundClick();
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let roomCode = '';
+            for (let i = 0; i < 6; i++) { roomCode += chars.charAt(Math.floor(Math.random() * chars.length)); }
+            openLobby(roomCode, true);
+        }
+
+        function joinRoom() {
+            playSoundClick();
+            const codeInput = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (codeInput.length < 6) { alert('Mã phòng phải có đúng 6 ký tự!'); return; }
+            openLobby(codeInput, false);
+        }
+
+        // ================= LOBBY GAME =================
+        function openLobby(roomCode, isHost) {
+            document.getElementById('roomCard').classList.add('hidden');
+            document.getElementById('lobbyCard').classList.remove('hidden');
+            document.getElementById('lobbyGameTitle').innerText = currentSelectedGame.toUpperCase();
+            document.getElementById('lobbyCodeDisplay').innerText = roomCode;
+
+            maxLobbySlots = currentSelectedGame === 'Uno' ? 6 : 8;
+            const myName = sessionStorage.getItem('moon_player') || "Bạn";
+            const myAvatar = sessionStorage.getItem('moon_avatar') || "🐱";
+
+            lobbyPlayers = [
+                { name: myName, avatar: myAvatar, isHost: isHost, isBot: false }
+            ];
+
+            renderLobbySlots();
+        }
+
+        function renderLobbySlots() {
+            const container = document.getElementById('playerSlotsContainer');
+            container.innerHTML = "";
+
+            for (let i = 0; i < maxLobbySlots; i++) {
+                const slot = document.createElement('div');
+                
+                if (i < lobbyPlayers.length) {
+                    const player = lobbyPlayers[i];
+                    if (player.isHost) {
+                        slot.className = 'bg-indigo-600/30 border border-indigo-500 text-white rounded-xl p-2.5 text-xs font-bold text-center flex items-center justify-between';
+                        slot.innerHTML = `<span>👑 ${player.avatar} ${player.name}</span> <span class="text-[10px] bg-indigo-500/40 px-1.5 py-0.5 rounded">HOST</span>`;
+                    } else if (player.isBot) {
+                        slot.className = 'bg-slate-800/80 border border-slate-600 text-sky-300 rounded-xl p-2.5 text-xs font-bold text-center flex items-center justify-between';
+                        slot.innerHTML = `<span>🤖 ${player.name}</span> <button onclick="removeBotFromLobby(${i})" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-1">✕</button>`;
+                    } else {
+                        slot.className = 'bg-sky-600/30 border border-sky-500 text-white rounded-xl p-2.5 text-xs font-bold text-center';
+                        slot.innerText = `${player.avatar} ${player.name}`;
+                    }
+                } else {
+                    slot.className = 'bg-slate-900/30 border border-dashed border-slate-700/60 text-slate-600 rounded-xl p-2.5 text-xs text-center flex items-center justify-center italic';
+                    slot.innerText = 'Trống (Đang chờ...)';
+                }
+                
+                container.appendChild(slot);
+            }
+        }
+
+        function addBotToLobby() {
+            playSoundClick();
+            if (lobbyPlayers.length >= maxLobbySlots) {
+                alert(`Phòng đã đầy (${maxLobbySlots}/${maxLobbySlots} người chơi)!`);
+                return;
+            }
+            const botNames = ['Huy Hoàng', 'Nam Phong', 'Tuấn Kiệt', 'Minh Anh', 'Khánh Linh', 'Bảo Ngọc', 'Đức Anh'];
+            const existingBots = lobbyPlayers.filter(p => p.isBot).length;
+            const chosenName = botNames[existingBots % botNames.length];
+
+            lobbyPlayers.push({
+                name: `Bot ${chosenName}`,
+                avatar: '🤖',
+                isHost: false,
+                isBot: true
+            });
+            renderLobbySlots();
+        }
+
+        function removeBotFromLobby(index) {
+            playSoundClick();
+            lobbyPlayers.splice(index, 1);
+            renderLobbySlots();
+        }
+
+        function leaveLobby() {
+            playSoundClick();
+            document.getElementById('lobbyCard').classList.add('hidden');
+            document.getElementById('menuCard').classList.remove('hidden');
+        }
+
+        function startGameLogic() {
+            playSoundClick();
+            const botCount = lobbyPlayers.filter(p => p.isBot).length;
+
+            if (currentSelectedGame === 'Uno' && botCount < 1) {
+                alert("Vui lòng bấm '+ Thêm Bot Defcon' ít nhất 1 Bot để vào trận UNO!");
+                return;
+            }
+
+            if (currentSelectedGame === 'Ma Sói' && lobbyPlayers.length < 6) {
+                alert("Game Ma Sói yêu cầu tối thiểu 6 người chơi. Hãy bấm '+ Thêm Bot Defcon' cho đủ tối thiểu 6 slot!");
+                return;
+            }
+
+            document.getElementById('menuCard').classList.add('hidden');
+            document.getElementById('roomCard').classList.add('hidden');
+            document.getElementById('lobbyCard').classList.add('hidden');
+            document.getElementById('unoGameCard').classList.add('hidden');
+            document.getElementById('werewolfGameCard').classList.add('hidden');
+            document.getElementById('werewolfRevealCard').classList.add('hidden');
+
+            if (currentSelectedGame === 'Uno') {
+                document.getElementById('unoGameCard').classList.remove('hidden');
+                initUnoGame();
+            } else if (currentSelectedGame === 'Ma Sói') {
+                document.getElementById('werewolfRevealCard').classList.remove('hidden');
+                prepareWerewolfGame();
+            }
+        }
+
+        // ================= HÀM TẠO LÁ BÀI MA SÓI =================
+        function generateWerewolfCardHTML(roleKey) {
+            const role = WEREWOLF_ROLES[roleKey];
+            return `
+                <div class="werewolf-card">
+                    <div class="card-art-box" style="background-color: ${role.colorBg}; border-color: ${role.cardColor}">
+                        ${role.svg}
+                    </div>
+                    <div class="card-title-text" style="color: ${role.colorBg}">${role.name}</div>
+                    <div class="card-desc-text">${role.desc}</div>
+                </div>
+            `;
+        }
+
+        // ================= GAME MA SÓI LOGIC =================
+        function prepareWerewolfGame() {
+            werewolfPlayers = lobbyPlayers.map(p => ({
+                name: p.name,
+                avatar: p.avatar,
+                isBot: p.isBot,
+                alive: true,
+                role: null
+            }));
+
+            const rolePool = ['WEREWOLF', 'WEREWOLF', 'SEER', 'WITCH', 'BODYGUARD', 'HUNTER', 'TANNER', 'DRUNK'];
+            rolePool.sort(() => Math.random() - 0.5);
+            werewolfPlayers.forEach((p, idx) => { p.role = rolePool[idx]; });
+            myPlayerIndex = 0;
+            
+            witchHealUsed = false;
+            witchPoisonUsed = false;
+
+            const myRole = werewolfPlayers[myPlayerIndex].role;
+            document.getElementById('myRoleBackFace').innerHTML = generateWerewolfCardHTML(myRole);
+            
+            const flipContainer = document.getElementById('myRoleFlipContainer');
+            flipContainer.classList.remove('flipped');
+            
+            const enterBox = document.getElementById('enterVillageBox');
+            enterBox.classList.add('hidden');
+            enterBox.classList.remove('opacity-100');
+            enterBox.classList.add('opacity-0');
+            
+            const instruction = document.getElementById('revealInstruction');
+            instruction.innerText = "Nhấn vào lá bài để lật và xem vai trò của bạn";
+            instruction.classList.add('animate-pulse');
+        }
+
+        function flipMyCard() {
+            playSoundCard();
+            const flipContainer = document.getElementById('myRoleFlipContainer');
+            if (flipContainer.classList.contains('flipped')) return;
+            
+            flipContainer.classList.add('flipped');
+            
+            const instruction = document.getElementById('revealInstruction');
+            instruction.innerText = "Đây là vai trò của bạn trong ván này!";
+            instruction.classList.remove('animate-pulse');
+
+            setTimeout(() => {
+                const enterBox = document.getElementById('enterVillageBox');
+                enterBox.classList.remove('hidden');
+                setTimeout(() => {
+                    enterBox.classList.remove('opacity-0');
+                    enterBox.classList.add('opacity-100');
+                }, 50);
+            }, 1200);
+        }
+
+        function enterWerewolfVillage() {
+            playSoundClick();
+            document.getElementById('werewolfRevealCard').classList.add('hidden');
+            document.getElementById('werewolfGameCard').classList.remove('hidden');
+            initWerewolfGame();
+        }
+
+        function initWerewolfGame() {
+            werewolfDayCount = 1;
+            document.getElementById('werewolfChatLog').innerHTML = '';
+            document.getElementById('notebookText').value = '';
+            appendChatMessage("Quản trò", "Chào mừng các dân làng đến với đợt ma sói hoành hành!", "system");
+
+            const cardContainer = document.getElementById('myWerewolfCardContainer');
+            cardContainer.innerHTML = generateWerewolfCardHTML(werewolfPlayers[myPlayerIndex].role);
+            startNightPhase();
+        }
+
+        function toggleNotebook() {
+            playSoundClick();
+            const modal = document.getElementById('notebookModal');
+            modal.classList.toggle('hidden');
+        }
+
+        function startNightPhase() {
+            playSoundWolfHowl();
+            werewolfPhase = "NIGHT";
+            selectedTargetIndex = null;
+            victimTonightIndex = null;
+            guardedTonightIndex = null;
+            poisonedTonightIndex = null;
+
+            if (dayTimerInterval) clearInterval(dayTimerInterval);
+            document.getElementById('dayTimerBox').classList.add('hidden');
+
+            document.getElementById('werewolfPhaseText').innerText = `🌙 Đêm Thứ ${werewolfDayCount} - Ban Đêm Tịch Mịch`;
+            document.getElementById('werewolfPhaseText').className = "text-xs font-bold text-indigo-400";
+            document.getElementById('werewolfGameCard').className = "glass-card p-4 sm:p-6 night-mode transition-all duration-500";
+            document.getElementById('dayVotePanel').classList.add('hidden');
+
+            updateWerewolfPlayersList();
+
+            const myRole = werewolfPlayers[myPlayerIndex].role;
+            const myLog = document.getElementById('werewolfActionLog');
+            const skillContainer = document.getElementById('werewolfSkillButtons');
+            skillContainer.innerHTML = '';
+
+            appendChatMessage("Quản trò", `Đêm thứ ${werewolfDayCount} bắt đầu. Mọi người đi ngủ...`, "system");
+
+            if (!werewolfPlayers[myPlayerIndex].alive) {
+                myLog.innerText = "👻 Bạn đã chết. Hãy giữ im lặng theo dõi diễn biến trận đấu.";
+                skillContainer.classList.add('hidden');
+                setTimeout(processBotNightActions, 3500);
+                return;
+            }
+
+            if (myRole === 'WEREWOLF') {
+                const otherWolf = werewolfPlayers.find((p, idx) => p.role === 'WEREWOLF' && idx !== myPlayerIndex);
+                myLog.innerText = `🐺 Bạn là MA SÓI! Chọn 1 mục tiêu trên danh sách và bấm Cắn. Đồng minh: ${otherWolf ? otherWolf.name : 'Không có'}.`;
+                skillContainer.classList.remove('hidden');
+                skillContainer.innerHTML = `<button onclick="confirmWolfBite()" class="w-full py-2 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-xs">Cắn Mục Tiêu 🩸</button>`;
+            } else if (myRole === 'SEER') {
+                myLog.innerText = "🔮 Bạn là TIÊN TRI! Chọn 1 người chơi để kiểm tra xem họ có phải Ma Sói hay không.";
+                skillContainer.classList.remove('hidden');
+                skillContainer.innerHTML = `<button onclick="confirmSeerCheck()" class="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-xs">Soi Bài Mục Tiêu 🔮</button>`;
+            } else if (myRole === 'BODYGUARD') {
+                myLog.innerText = "🛡️ Bạn là BẢO VỆ! Chọn 1 người chơi để bảo vệ họ khỏi cú cắn của Sói trong đêm.";
+                skillContainer.classList.remove('hidden');
+                skillContainer.innerHTML = `<button onclick="confirmGuard()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-xs">Bảo Vệ Mục Tiêu 🛡️</button>`;
+            } else if (myRole === 'WITCH') {
+                myLog.innerText = "🧪 Bạn là PHÙ THỦY! Chuẩn bị nhận thông tin nạn nhân bị Sói cắn...";
+                skillContainer.classList.remove('hidden');
+                skillContainer.innerHTML = `<button onclick="confirmWitchAction()" class="w-full py-2 bg-pink-600 hover:bg-pink-500 rounded-xl font-bold text-xs">Dùng Bình Cứu / Độc 🧪</button>`;
+            } else {
+                myLog.innerText = "💤 Bạn là Dân Làng/Kẻ Say/Chủ Tiệm. Đang ngủ say... Hãy chờ các chức năng ban đêm.";
+                skillContainer.classList.add('hidden');
+                setTimeout(processBotNightActions, 3500);
+            }
+        }
+
+        function selectPlayerTarget(index) {
+            playSoundClick();
+            if (!werewolfPlayers[index].alive) return;
+            selectedTargetIndex = index;
+            updateWerewolfPlayersList();
+        }
+
+        function updateWerewolfPlayersList() {
+            const container = document.getElementById('werewolfPlayersGrid');
+            container.innerHTML = '';
+
+            let aliveCount = 0;
+            werewolfPlayers.forEach((p, idx) => {
+                if (p.alive) aliveCount++;
+                const isSelected = selectedTargetIndex === idx;
+
+                const card = document.createElement('div');
+                card.onclick = () => selectPlayerTarget(idx);
+                card.className = `p-2 rounded-xl border text-left cursor-pointer transition-all ${
+                    !p.alive 
+                        ? 'bg-slate-950/40 border-slate-900 opacity-40 cursor-not-allowed' 
+                        : isSelected 
+                            ? 'bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/50' 
+                            : 'bg-slate-900/60 border-slate-700/80 hover:border-slate-500'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold ${p.alive ? 'text-white' : 'text-slate-500 line-through'}">${p.avatar} ${p.name}</span>
+                        <span class="text-[10px]">${p.alive ? '🟢' : '💀'}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">
+                        ${!p.alive ? 'Đã chết' : isSelected ? '👉 Chọn' : 'Sống'}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('aliveCount').innerText = aliveCount;
+        }
+
+        function confirmWolfBite() {
+            playSoundClick();
+            if (selectedTargetIndex === null) { alert('Vui lòng chọn 1 mục tiêu để cắn!'); return; }
+            victimTonightIndex = selectedTargetIndex;
+            document.getElementById('werewolfActionLog').innerText = `🩸 Bạn đã chọn cắn ${werewolfPlayers[selectedTargetIndex].name}. Đang chờ các chức năng khác...`;
+            document.getElementById('werewolfSkillButtons').classList.add('hidden');
+            setTimeout(processBotNightActions, 2500);
+        }
+
+        function confirmSeerCheck() {
+            playSoundClick();
+            if (selectedTargetIndex === null) { alert('Vui lòng chọn 1 mục tiêu để soi bài!'); return; }
+            const target = werewolfPlayers[selectedTargetIndex];
+            const isWolf = target.role === 'WEREWOLF';
+            alert(`🔮 Kết quả soi bài: Người chơi ${target.name} là ${isWolf ? '🔴 MA SÓI!' : '🟢 PHE DÂN LÀNG!'}`);
+            document.getElementById('werewolfActionLog').innerText = `🔮 Bạn đã soi xong ${target.name}. Đang chờ bình minh...`;
+            document.getElementById('werewolfSkillButtons').classList.add('hidden');
+            setTimeout(processBotNightActions, 2500);
+        }
+
+        function confirmGuard() {
+            playSoundClick();
+            if (selectedTargetIndex === null) { alert('Vui lòng chọn 1 mục tiêu để bảo vệ!'); return; }
+            guardedTonightIndex = selectedTargetIndex;
+            document.getElementById('werewolfActionLog').innerText = `🛡️ Bạn đã chọn bảo vệ ${werewolfPlayers[selectedTargetIndex].name}.`;
+            document.getElementById('werewolfSkillButtons').classList.add('hidden');
+            setTimeout(processBotNightActions, 2500);
+        }
+
+        function confirmWitchAction() {
+            playSoundClick();
+            let choice = prompt(`Phù thủy: Nạn nhân bị cắn đêm nay là ${victimTonightIndex !== null ? werewolfPlayers[victimTonightIndex].name : 'Không ai'}.\n1: Cứu người (còn ${witchHealUsed ? '0' : '1'})\n2: Độc người đã chọn (còn ${witchPoisonUsed ? '0' : '1'})\n3: Bỏ qua`);
+            if (choice === '1' && !witchHealUsed && victimTonightIndex !== null) {
+                witchHealUsed = true;
+                victimTonightIndex = null;
+                alert('🧪 Bạn đã dùng bình Cứu!');
+            } else if (choice === '2' && !witchPoisonUsed && selectedTargetIndex !== null) {
+                witchPoisonUsed = true;
+                poisonedTonightIndex = selectedTargetIndex;
+                alert(`🧪 Bạn đã hạ độc ${werewolfPlayers[selectedTargetIndex].name}!`);
+            }
+            document.getElementById('werewolfActionLog').innerText = `🧪 Phù thủy đã hoàn thành lượt. Đang chờ bình minh...`;
+            document.getElementById('werewolfSkillButtons').classList.add('hidden');
+            setTimeout(processBotNightActions, 2500);
+        }
+
+        function processBotNightActions() {
+            if (werewolfPlayers[myPlayerIndex].role !== 'WEREWOLF') {
+                const aliveVillagers = werewolfPlayers.map((p, i) => ({ ...p, index: i }))
+                    .filter(p => p.alive && p.role !== 'WEREWOLF');
+                if (aliveVillagers.length > 0) {
+                    const randomVictim = aliveVillagers[Math.floor(Math.random() * aliveVillagers.length)];
+                    victimTonightIndex = randomVictim.index;
+                }
+            }
+
+            if (werewolfPlayers[myPlayerIndex].role !== 'BODYGUARD') {
+                const alivePlayers = werewolfPlayers.map((p, i) => ({ ...p, index: i })).filter(p => p.alive);
+                const randomGuard = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+                guardedTonightIndex = randomGuard.index;
+            }
+
+            let diedTonight = [];
+            
+            if (victimTonightIndex !== null && victimTonightIndex !== guardedTonightIndex) {
+                werewolfPlayers[victimTonightIndex].alive = false;
+                diedTonight.push(werewolfPlayers[victimTonightIndex].name);
+            }
+
+            if (poisonedTonightIndex !== null) {
+                werewolfPlayers[poisonedTonightIndex].alive = false;
+                diedTonight.push(werewolfPlayers[poisonedTonightIndex].name);
+            }
+
+            startDayPhase(diedTonight);
+        }
+
+        function startDayPhase(diedList) {
+            playSoundMorningBell();
+            werewolfPhase = "DAY_DISCUSSION";
+            document.getElementById('werewolfPhaseText').innerText = `☀️ Ngày Thứ ${werewolfDayCount} - Bình Minh Thức Giấc`;
+            document.getElementById('werewolfPhaseText').className = "text-xs font-bold text-amber-400";
+            document.getElementById('werewolfGameCard').className = "glass-card p-4 sm:p-6 day-mode transition-all duration-500";
+            
+            const log = document.getElementById('werewolfActionLog');
+            if (diedList.length > 0) {
+                triggerScreenShake();
+                log.innerText = `🌅 Bình minh đã lên! Đêm qua người chơi [${diedList.join(', ')}] đã qua đời! Hãy thảo luận 3 phút để tìm ra Ma Sói.`;
+                appendChatMessage("Quản trò", `Đêm qua người chơi [${diedList.join(', ')}] đã qua đời!`, "system");
+            } else {
+                log.innerText = `🌅 Bình minh đã lên! Đêm qua là một đêm bình yên. Không ai bị hại. Dân làng hãy thảo luận!`;
+                appendChatMessage("Quản trò", `Đêm qua không ai bị sát hại!`, "system");
+            }
+
+            updateWerewolfPlayersList();
+            if (checkWinCondition()) return;
+
+            startDayTimer(180);
+
+            document.getElementById('dayVotePanel').classList.remove('hidden');
+            selectedTargetIndex = null;
+
+            setTimeout(simulateBotChat, 4000);
+        }
+
+        function startDayTimer(seconds) {
+            dayTimeRemaining = seconds;
+            document.getElementById('dayTimerBox').classList.remove('hidden');
+            updateTimerDisplay();
+
+            if (dayTimerInterval) clearInterval(dayTimerInterval);
+            dayTimerInterval = setInterval(() => {
+                dayTimeRemaining--;
+                updateTimerDisplay();
+
+                if (dayTimeRemaining <= 0) {
+                    clearInterval(dayTimerInterval);
+                    alert("⏰ Đã hết 3 phút thảo luận ban ngày! Hệ thống tự động chốt biểu quyết.");
+                    submitDayVote();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const min = Math.floor(dayTimeRemaining / 60).toString().padStart(2, '0');
+            const sec = (dayTimeRemaining % 60).toString().padStart(2, '0');
+            document.getElementById('dayTimerDisplay').innerText = `${min}:${sec}`;
+        }
+
+        function sendWerewolfChat() {
+            const input = document.getElementById('werewolfChatInput');
+            const msg = input.value.trim();
+            if (msg === '') return;
+            playSoundClick();
+            const myName = sessionStorage.getItem('moon_player') || "Bạn";
+            const myAvatar = sessionStorage.getItem('moon_avatar') || "🐱";
+            appendChatMessage(`${myAvatar} ${myName}`, msg, "user");
+            input.value = '';
+        }
+
+        function appendChatMessage(sender, text, type = "normal") {
+            const chatLog = document.getElementById('werewolfChatLog');
+            const msgDiv = document.createElement('div');
+            
+            if (type === "system") {
+                msgDiv.className = "text-[11px] text-amber-300 italic bg-amber-950/40 p-1.5 rounded-lg border border-amber-800/40";
+                msgDiv.innerText = `📢 ${text}`;
+            } else if (type === "user") {
+                msgDiv.className = "text-xs bg-sky-950/60 p-2 rounded-lg border border-sky-800/40 text-sky-200 ml-4";
+                msgDiv.innerHTML = `<span class="font-bold text-sky-400">${sender}:</span> ${text}`;
+            } else {
+                msgDiv.className = "text-xs bg-slate-900/80 p-2 rounded-lg border border-slate-800 text-slate-300 mr-4";
+                msgDiv.innerHTML = `<span class="font-bold text-slate-400">${sender}:</span> ${text}`;
+            }
+            
+            chatLog.appendChild(msgDiv);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        function simulateBotChat() {
+            if (werewolfPhase !== "DAY_DISCUSSION") return;
+
+            const aliveBots = werewolfPlayers.filter(p => p.alive && p.isBot);
+            if (aliveBots.length === 0) return;
+
+            const randomBot = aliveBots[Math.floor(Math.random() * aliveBots.length)];
+            const targetCandidate = werewolfPlayers.filter(p => p.alive && p.name !== randomBot.name)[Math.floor(Math.random() * (werewolfPlayers.length - 1))];
+
+            const botDialogues = [
+                `Tớ nghi ngờ ${targetCandidate ? targetCandidate.name : 'ai đó'} lắm, ban đêm thái độ rất lạ!`,
+                `Đêm qua tớ nghe tiếng động phía bên nhà ${targetCandidate ? targetCandidate.name : 'nghi phạm'} đấy...`,
+                `Mọi người tập trung vote đi, không là Sói thắng mất!`,
+                `Tớ là Dân xịn nhé, đừng treo cổ nhầm người tội nghiệp!`
+            ];
+
+            const chosenMsg = botDialogues[Math.floor(Math.random() * botDialogues.length)];
+            appendChatMessage(`🤖 ${randomBot.name}`, chosenMsg, "bot");
+
+            if (dayTimeRemaining > 30) {
+                setTimeout(simulateBotChat, Math.floor(Math.random() * 12000) + 8000);
+            }
+        }
+
+        function submitDayVote() {
+            playSoundGavel();
+            triggerScreenShake();
+            if (dayTimerInterval) clearInterval(dayTimerInterval);
+
+            if (selectedTargetIndex === null) {
+                const aliveList = werewolfPlayers.map((p, idx) => ({ ...p, idx })).filter(p => p.alive);
+                selectedTargetIndex = aliveList[Math.floor(Math.random() * aliveList.length)].idx;
+            }
+            
+            const votes = {};
+            werewolfPlayers.forEach((p, idx) => {
+                if (p.alive) {
+                    const randomVote = idx === myPlayerIndex ? selectedTargetIndex : Math.floor(Math.random() * werewolfPlayers.length);
+                    if (werewolfPlayers[randomVote].alive) {
+                        votes[randomVote] = (votes[randomVote] || 0) + 1;
+                    }
+                }
+            });
+
+            let maxVotes = 0;
+            let lynchIndex = null;
+            for (let idx in votes) {
+                if (votes[idx] > maxVotes) {
+                    maxVotes = votes[idx];
+                    lynchIndex = parseInt(idx);
+                }
+            }
+
+            if (lynchIndex !== null) {
+                werewolfPlayers[lynchIndex].alive = false;
+                alert(`⚖️ Dân làng đã quyết định treo cổ: ${werewolfPlayers[lynchIndex].name}! (Vai trò: ${WEREWOLF_ROLES[werewolfPlayers[lynchIndex].role].name})`);
+                appendChatMessage("Quản trò", `Dân làng đã treo cổ ${werewolfPlayers[lynchIndex].name} (${WEREWOLF_ROLES[werewolfPlayers[lynchIndex].role].name}).`, "system");
+
+                // KIỂM TRA ĐIỀU KIỆN THẮNG CỦA BÁN SÓI / CHỦ TIỆM (TANNER)
+                if (werewolfPlayers[lynchIndex].role === 'TANNER') {
+                    fireWinConfetti();
+                    alert(`🎉 BÁN SÓI / CHỦ TIỆM ${werewolfPlayers[lynchIndex].name} ĐÃ BỊ TREO CỔ VÀ GIÀNH CHIẾN THẮNG ĐƠN ĐỘC!`);
+                    quitWerewolfGame();
+                    return;
+                }
+
+                if (werewolfPlayers[lynchIndex].role === 'HUNTER') {
+                    const victimOfHunter = werewolfPlayers.find(p => p.alive);
+                    if (victimOfHunter) {
+                        victimOfHunter.alive = false;
+                        alert(`🎯 Thợ Săn ${werewolfPlayers[lynchIndex].name} trước khi chết đã nổ súng kéo theo ${victimOfHunter.name}!`);
+                    }
+                }
+            }
+
+            werewolfDayCount++;
+            if (!checkWinCondition()) {
+                setTimeout(startNightPhase, 3000);
+            }
+        }
+
+        function checkWinCondition() {
+            const aliveWolves = werewolfPlayers.filter(p => p.alive && p.role === 'WEREWOLF').length;
+            const aliveGood = werewolfPlayers.filter(p => p.alive && p.role !== 'WEREWOLF' && p.role !== 'TANNER').length;
+
+            if (aliveWolves === 0) {
+                fireWinConfetti();
+                alert("🎉 CHIẾN THẮNG RỰC RỠ! Toàn bộ Ma Sói đã bị tiêu diệt. Phe Dân Làng thắng!");
+                quitWerewolfGame();
+                return true;
+            } else if (aliveWolves >= aliveGood) {
+                alert("🐺 MA SÓI THẮNG THẾ! Số lượng Ma Sói đã bằng hoặc áp đảo Dân Làng. Ma Sói chiếm trọn ngôi làng!");
+                quitWerewolfGame();
+                return true;
+            }
+            return false;
+        }
+
+        function quitWerewolfGame() {
+            playSoundClick();
+            if (dayTimerInterval) clearInterval(dayTimerInterval);
+            document.getElementById('werewolfGameCard').classList.add('hidden');
+            document.getElementById('menuCard').classList.remove('hidden');
+        }
+
+        // ================= GAME UNO =================
+        function buildDeck() {
+            deck = [];
+            for (let color of COLORS) {
+                for (let val of VALUES) {
+                    deck.push({ color: color, value: val });
+                    if (val !== '0') deck.push({ color: color, value: val });
+                }
+            }
+            for (let i = 0; i < 4; i++) {
+                deck.push({ color: 'wild', value: '🎨' });
+                deck.push({ color: 'wild', value: '+4' });
+            }
+            deck.sort(() => Math.random() - 0.5);
+        }
+
+        function initUnoGame() {
+            buildDeck();
+            isClockwise = true;
+            
+            const lobbyBots = lobbyPlayers.filter(p => p.isBot);
+            unoBots = lobbyBots.map(b => ({
+                name: b.name,
+                hand: deck.splice(0, 7)
+            }));
+
+            playerHand = deck.splice(0, 7);
+
+            do { topDiscard = deck.pop(); } while (topDiscard.color === 'wild');
+            activeColor = topDiscard.color;
+
+            currentTurnIndex = 0;
+            hasCalledUno = false;
+            updateUnoUI();
+        }
+
+        function renderUnoCardHTML(card, isClickable = false, index = -1) {
+            let bgClass = `bg-${card.color}`;
+            let clickAttr = isClickable ? `onclick="playPlayerCard(${index})"` : '';
+            return `
+                <div class="uno-card ${bgClass}" ${clickAttr}>
+                    <div class="text-left text-xs font-black">${card.value}</div>
+                    <div class="text-center text-xl font-black my-auto drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">${card.value}</div>
+                    <div class="text-right text-xs font-black rotate-180">${card.value}</div>
+                </div>
+            `;
+        }
+
+        function renderBotAvatarHTML(bot, botIndex) {
+            const isTurn = currentTurnIndex === (botIndex + 1);
+            return `
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-2xl border transition-all ${
+                    isTurn 
+                        ? 'bg-amber-500/40 border-amber-300 ring-4 ring-amber-400/60 scale-110 shadow-xl' 
+                        : 'bg-slate-900/80 border-slate-700 opacity-90'
+                }">
+                    <div class="w-7 h-7 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center text-sm">🤖</div>
+                    <div>
+                        <div class="text-[10px] font-black ${isTurn ? 'text-amber-300' : 'text-slate-200'}">${bot.name}</div>
+                        <div class="flex items-center gap-1 mt-0.5">
+                            <div class="uno-card-back"><span class="text-[7px] text-red-500 font-bold italic">UNO</span></div>
+                            <span class="bg-red-600 text-white font-black px-1.5 py-0.2 rounded text-[10px]">${bot.hand.length}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateUnoUI() {
+            document.getElementById('discardPile').innerHTML = renderUnoCardHTML({ ...topDiscard, color: activeColor });
+            document.getElementById('playerHandContainer').innerHTML = playerHand.map((card, idx) => renderUnoCardHTML(card, currentTurnIndex === 0, idx)).join('');
+
+            document.getElementById('botSlotLeft').innerHTML = '';
+            document.getElementById('botSlotTopLeft').innerHTML = '';
+            document.getElementById('botSlotTopRight').innerHTML = '';
+            document.getElementById('botSlotRight').innerHTML = '';
+
+            unoBots.forEach((bot, bIdx) => {
+                const html = renderBotAvatarHTML(bot, bIdx);
+                if (bIdx === 0) document.getElementById('botSlotLeft').innerHTML = html;
+                else if (bIdx === 1) document.getElementById('botSlotTopLeft').innerHTML = html;
+                else if (bIdx === 2) document.getElementById('botSlotTopRight').innerHTML = html;
+                else if (bIdx === 3) document.getElementById('botSlotRight').innerHTML = html;
+                else document.getElementById('botSlotTopLeft').innerHTML += html;
+            });
+
+            const status = document.getElementById('turnStatus');
+            if (currentTurnIndex === 0) {
+                status.innerText = "👉 Lượt của bạn!";
+                status.className = "text-xs font-black text-amber-300 bg-slate-900/90 px-4 py-1 rounded-full border border-amber-500/40 shadow-md";
+            } else {
+                const currentBotName = unoBots[currentTurnIndex - 1].name;
+                status.innerText = `⚡ Lượt của ${currentBotName}...`;
+                status.className = "text-xs font-black text-sky-300 bg-slate-900/90 px-4 py-1 rounded-full border border-sky-500/40 shadow-md animate-pulse";
+            }
+        }
+
+        function isValidMove(card) {
+            if (card.color === 'wild') return true;
+            return card.color === activeColor || card.value === topDiscard.value;
+        }
+
+        function playPlayerCard(index) {
+            if (currentTurnIndex !== 0) return;
+            const card = playerHand[index];
+            if (!isValidMove(card)) { alert("Lá bài không hợp lệ! Phải cùng màu hoặc cùng số/chức năng."); return; }
+
+            playSoundCard();
+            if (card.color === 'wild') {
+                pendingWildCardIndex = index;
+                document.getElementById('colorPickerBox').classList.remove('hidden');
+                return;
+            }
+            executePlayerMove(index, card.color);
+        }
+
+        function selectWildColor(color) {
+            playSoundClick();
+            document.getElementById('colorPickerBox').classList.add('hidden');
+            if (pendingWildCardIndex !== null) {
+                executePlayerMove(pendingWildCardIndex, color);
+                pendingWildCardIndex = null;
+            }
+        }
+
+        function executePlayerMove(index, chosenColor) {
+            const card = playerHand.splice(index, 1)[0];
+            topDiscard = card;
+            activeColor = chosenColor;
+
+            if (playerHand.length === 1 && !hasCalledUno) {
+                alert("Bạn quên hô CALL UNO! Phạt rút thêm 2 lá!");
+                drawCards(playerHand, 2);
+            }
+            if (playerHand.length !== 1) hasCalledUno = false;
+
+            if (playerHand.length === 0) {
+                updateUnoUI();
+                fireWinConfetti();
+                setTimeout(() => alert("🎉 BẠN ĐÃ THẮNG TRẬN UNO NÀY!"), 100);
+                return;
+            }
+
+            const nextTargetHand = unoBots[0].hand;
+            let skipNext = handleCardEffects(card, nextTargetHand);
+            
+            advanceTurn(skipNext);
+        }
+
+        function playerDrawCard() {
+            if (currentTurnIndex !== 0) return;
+            playSoundCard();
+            drawCards(playerHand, 1);
+            advanceTurn(false);
+        }
+
+        function callUno() {
+            playSoundUnoTrumpet();
+            if (playerHand.length <= 2) {
+                hasCalledUno = true;
+                alert("📣 BẠN ĐÃ HÔ UNO!");
+            } else { alert("Chưa đủ điều kiện hô UNO!"); }
+        }
+
+        function drawCards(hand, count) {
+            for (let i = 0; i < count; i++) {
+                if (deck.length === 0) buildDeck();
+                hand.push(deck.pop());
+            }
+        }
+
+        function handleCardEffects(card, targetHand) {
+            if (card.value === '+2') { drawCards(targetHand, 2); return true; }
+            if (card.value === '+4') { drawCards(targetHand, 4); return true; }
+            if (card.value === '🚫') { return true; }
+            if (card.value === '🔁') { 
+                isClockwise = !isClockwise; 
+                return unoBots.length === 1;
+            }
+            return false;
+        }
+
+        function advanceTurn(skipNext = false) {
+            const totalPlayers = 1 + unoBots.length;
+            let step = (skipNext ? 2 : 1) * (isClockwise ? 1 : -1);
+            currentTurnIndex = (currentTurnIndex + step + totalPlayers) % totalPlayers;
+
+            updateUnoUI();
+
+            if (currentTurnIndex !== 0) {
+                setTimeout(botUnoTurn, 1200);
+            }
+        }
+
+        function botUnoTurn() {
+            if (currentTurnIndex === 0) return;
+            const botIdx = currentTurnIndex - 1;
+            const currentBot = unoBots[botIdx];
+
+            let playableIndices = [];
+            currentBot.hand.forEach((card, idx) => { if (isValidMove(card)) playableIndices.push(idx); });
+
+            if (playableIndices.length > 0) {
+                let chosenIndex = playableIndices[0];
+                let card = currentBot.hand.splice(chosenIndex, 1)[0];
+                topDiscard = card;
+                activeColor = card.color === 'wild' ? COLORS[Math.floor(Math.random() * COLORS.length)] : card.color;
+                
+                playSoundCard();
+
+                if (currentBot.hand.length === 1) {
+                    playSoundUnoTrumpet();
+                    alert(`🤖 ${currentBot.name} hô: UNO!`);
+                }
+                if (currentBot.hand.length === 0) {
+                    updateUnoUI();
+                    setTimeout(() => alert(`😭 BOT ${currentBot.name.toUpperCase()} ĐÃ THẮNG TRẬN UNO!`), 100);
+                    return;
+                }
+
+                const nextTurn = (currentTurnIndex + 1) % (1 + unoBots.length);
+                const targetHand = nextTurn === 0 ? playerHand : unoBots[nextTurn - 1].hand;
+                let skipNext = handleCardEffects(card, targetHand);
+
+                advanceTurn(skipNext);
+            } else {
+                playSoundCard();
+                drawCards(currentBot.hand, 1);
+                advanceTurn(false);
+            }
+        }
+
+        function quitUnoGame() {
+            playSoundClick();
+            document.getElementById('unoGameCard').classList.add('hidden');
+            document.getElementById('menuCard').classList.remove('hidden');
+        }
+
+        window.onload = function() {
+            const savedUser = sessionStorage.getItem('moon_player');
+            if (savedUser) { showMenu(savedUser); }
+        }
+    </script>
+</body>
+</html>
